@@ -48,32 +48,43 @@ function App() {
       const predictions = [];
       for (let segment of drawing) {
         if (segment) {
-          const response = await fetch(`${API_URL}/predict`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ image: segment })
-          });
+          try {
+            const response = await fetch(`${API_URL}/predict`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({ image: segment })
+            });
 
-          const data = await response.json();
-          if (data.success) {
-            predictions.push(data.prediction);
+            const data = await response.json();
+            if (data.success) {
+              predictions.push(data.prediction);
+            } else {
+              throw new Error(data.error || 'Tahmin başarısız');
+            }
+          } catch (err) {
+            console.error('Segment tahmin hatası:', err);
+            setError(`Tahmin hatası: ${err.message}`);
+            break;
           }
         }
       }
 
-      // Tahminleri birleştir
-      const expression = predictions.join('');
-      setResult(expression);
+      if (predictions.length > 0) {
+        // Tahminleri birleştir
+        const expression = predictions.join('');
+        setResult(expression);
 
-      // Matematiksel işlemi hesapla
-      const calculated = calculateExpression(expression);
-      if (calculated !== null) {
-        setCalculatedResult(calculated);
+        // Matematiksel işlemi hesapla
+        const calculated = calculateExpression(expression);
+        if (calculated !== null) {
+          setCalculatedResult(calculated);
+        }
       }
 
     } catch (err) {
+      console.error('Genel hata:', err);
       setError('Tahmin sırasında bir hata oluştu: ' + err.message);
     } finally {
       setIsLoading(false);

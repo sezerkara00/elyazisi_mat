@@ -287,17 +287,22 @@ def preprocess_image(base64_data):
 
 # Global değişkenler
 model = None
+model_loaded = False  # Model yükleme durumunu takip etmek için
 
 def load_model_once():
-    global model
-    if model is None:
-        print("Model yükleniyor...")
+    global model, model_loaded
+    if not model_loaded:
+        logger.info("Model yükleniyor...")
         try:
             model = keras.models.load_model('./model/digits_model.keras')
-        except:
-            print("Model bulunamadı, yeni model oluşturuluyor")
+            model_loaded = True
+            logger.info("Model başarıyla yüklendi")
+        except Exception as e:
+            logger.error(f"Model yükleme hatası: {str(e)}")
+            logger.info("Yeni model oluşturuluyor")
             model = create_model()
             train_model(model, './digits')
+            model_loaded = True
     return model
 
 @app.route('/', methods=['GET'])
@@ -319,19 +324,29 @@ def health_check():
     })
 
 @app.route('/predict', methods=['POST'])
-@limiter.limit("1 per second")  # Her kullanıcı için saniyede 1 istek
+@limiter.limit("1 per second")
 def predict():
     try:
+        logger.info("Tahmin isteği alındı")
         model = load_model_once()
-        data = request.json
         
+        if not model:
+            logger.error("Model yüklenemedi")
+            return jsonify({
+                'success': False,
+                'error': 'Model yüklenemedi'
+            })
+
+        data = request.json
         if 'image' not in data:
+            logger.error("Görüntü verisi bulunamadı")
             return jsonify({
                 'success': False,
                 'error': 'Görüntü verisi bulunamadı'
             })
             
         processed_image = preprocess_image(data['image'])
+        logger.info("Görüntü işlendi")
         
         with tf.device('/CPU:0'):
             prediction = model.predict(processed_image, verbose=0)
@@ -348,7 +363,7 @@ def predict():
         
         result = symbols.get(predicted_class, str(predicted_class))
         
-        print(f"Tahmin: {result}, Güven: {confidence:.4f}")
+        logger.info(f"Tahmin: {result}, Güven: {confidence:.4f}")
         
         return jsonify({
             'success': True,
@@ -357,15 +372,22 @@ def predict():
         })
         
     except Exception as e:
-        print(f"Tahmin hatası: {str(e)}")
+        logger.error(f"Tahmin hatası: {str(e)}")
         return jsonify({
             'success': False,
             'error': str(e)
         })
 
+# Uygulama başlangıcında modeli yükle
+with app.app_context():
+    try:
+        logger.info("Uygulama başlangıcında model yükleniyor...")
+        load_model_once()
+    except Exception as e:
+        logger.error(f"Başlangıç model yükleme hatası: {str(e)}")
+
 if __name__ == '__main__':
     logger.info("Application starting...")
-    load_model_once()
     
     if os.environ.get('RENDER'):
         # Render.com'da Gunicorn kullanılacak
