@@ -21,9 +21,9 @@ app = Flask(__name__)
 CORS(app, resources={
     r"/predict": {
         "origins": [
-            "https://your-frontend-domain.vercel.app",
+            "https://elyazisi-mat.vercel.app",  # Vercel'den aldığınız URL
             "http://localhost:3000",
-            "*"  # Geliştirme aşamasında tüm originlere izin ver
+            "*"
         ],
         "methods": ["POST"],
         "allow_headers": ["Content-Type"]
