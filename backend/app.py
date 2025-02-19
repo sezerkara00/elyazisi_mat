@@ -240,14 +240,56 @@ def train_model(model, data_path):
         zoom_range=0.1
     )
     
+    # Veri setini küçült
+    max_samples_per_class = 100  # Her sınıf için maksimum örnek sayısı
+    
+    # Veriyi karıştır ve sınırla
+    X_limited = []
+    y_limited = []
+    for i in range(len(X)):
+        class_samples = np.sum(y == y[i])
+        if class_samples > max_samples_per_class:
+            # Bu sınıftan yeterince örnek var, bu örneği atla
+            continue
+        X_limited.append(X[i])
+        y_limited.append(y[i])
+    
+    X = np.array(X_limited)
+    y = np.array(y_limited)
+    
+    print(f"\nToplam {len(X)} görüntü yüklendi")
+    print(f"Veri şekli: {X.shape}")
+    print("\nEtiket dağılımı:")
+    
+    # Rakamlar için dağılım
+    for digit in range(10):
+        count = np.sum(y == digit)
+        print(f"Rakam {digit}: {count}")
+    
+    # Semboller için dağılım
+    for symbol_name, label in symbols.items():
+        count = np.sum(y == label)
+        print(f"{symbol_name}: {count}")
+    
+    # Veriyi karıştır ve eğit
+    indices = np.random.permutation(len(X))
+    X = X[indices]
+    y = y[indices]
+    
+    split = int(0.8 * len(X))
+    train_images = X[:split]
+    train_labels = y[:split]
+    val_images = X[split:]
+    val_labels = y[split:]
+    
     history = model.fit(
         datagen.flow(train_images, train_labels, batch_size=32),
         validation_data=(val_images, val_labels),
-        epochs=10,
+        epochs=5,  # 10'dan 5'e düşürüldü
         callbacks=[
             tf.keras.callbacks.EarlyStopping(
                 monitor='val_accuracy',
-                patience=3,
+                patience=2,  # 3'ten 2'ye düşürüldü
                 restore_best_weights=True
             )
         ]
@@ -257,8 +299,10 @@ def train_model(model, data_path):
     
     if not os.path.exists('./model'):
         os.makedirs('./model')
-    model.save('./model/digits_model.keras')
-    print("Model kaydedildi!")
+    
+    # Model ağırlıklarını kaydet
+    model.save_weights('./model/digits_model_weights.h5')
+    print("Model ağırlıkları kaydedildi!")
     
     return history
 
@@ -294,18 +338,20 @@ def load_model_once():
     if not model_loaded:
         logger.info("Model yükleniyor...")
         try:
-            # Tam dosya yolunu log'a yazdır
-            model_path = os.path.join(os.path.dirname(__file__), 'model', 'digits_model.keras')
-            logger.info(f"Model dosya yolu: {model_path}")
-            logger.info(f"Dosya var mı: {os.path.exists(model_path)}")
+            # Model ağırlıklarını yükle
+            model = create_model()
+            weights_path = os.path.join(os.path.dirname(__file__), 'model', 'digits_model_weights.h5')
+            logger.info(f"Model ağırlıkları yolu: {weights_path}")
+            logger.info(f"Dosya var mı: {os.path.exists(weights_path)}")
             
-            model = keras.models.load_model(model_path)
+            model.load_weights(weights_path)
             model_loaded = True
             logger.info("Model başarıyla yüklendi")
         except Exception as e:
             logger.error(f"Model yükleme hatası: {str(e)}")
             logger.info("Yeni model oluşturuluyor")
             model = create_model()
+            # Daha az veri ile eğit
             train_model(model, os.path.join(os.path.dirname(__file__), 'digits'))
             model_loaded = True
     return model
