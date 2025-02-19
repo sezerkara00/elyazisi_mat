@@ -19,7 +19,11 @@ app = Flask(__name__)
 # CORS ayarlarını güncelle
 CORS(app, resources={
     r"/predict": {
-        "origins": ["https://your-frontend-domain.vercel.app", "http://localhost:3000"],
+        "origins": [
+            "https://your-frontend-domain.vercel.app",
+            "http://localhost:3000",
+            "*"  # Geliştirme aşamasında tüm originlere izin ver
+        ],
         "methods": ["POST"],
         "allow_headers": ["Content-Type"]
     }
@@ -338,5 +342,5 @@ if __name__ == '__main__':
     # Model başlangıçta yükle
     load_model_once()
     # Port ayarını güncelle
-    port = int(os.environ.get("PORT", 10000))  # Render.com için varsayılan port
-    app.run(host='0.0.0.0', port=port) 
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host='0.0.0.0', port=port, debug=False) 
