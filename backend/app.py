@@ -294,14 +294,19 @@ def load_model_once():
     if not model_loaded:
         logger.info("Model yükleniyor...")
         try:
-            model = keras.models.load_model('./model/digits_model.keras')
+            # Tam dosya yolunu log'a yazdır
+            model_path = os.path.join(os.path.dirname(__file__), 'model', 'digits_model.keras')
+            logger.info(f"Model dosya yolu: {model_path}")
+            logger.info(f"Dosya var mı: {os.path.exists(model_path)}")
+            
+            model = keras.models.load_model(model_path)
             model_loaded = True
             logger.info("Model başarıyla yüklendi")
         except Exception as e:
             logger.error(f"Model yükleme hatası: {str(e)}")
             logger.info("Yeni model oluşturuluyor")
             model = create_model()
-            train_model(model, './digits')
+            train_model(model, os.path.join(os.path.dirname(__file__), 'digits'))
             model_loaded = True
     return model
 
@@ -375,6 +380,26 @@ def predict():
         logger.error(f"Tahmin hatası: {str(e)}")
         return jsonify({
             'success': False,
+            'error': str(e)
+        })
+
+@app.route('/debug', methods=['GET'])
+def debug():
+    try:
+        # Mevcut dizini ve içeriğini kontrol et
+        current_dir = os.path.dirname(__file__)
+        model_dir = os.path.join(current_dir, 'model')
+        digits_dir = os.path.join(current_dir, 'digits')
+        
+        return jsonify({
+            'current_directory': current_dir,
+            'model_directory_exists': os.path.exists(model_dir),
+            'model_directory_contents': os.listdir(model_dir) if os.path.exists(model_dir) else [],
+            'digits_directory_exists': os.path.exists(digits_dir),
+            'digits_directory_contents': os.listdir(digits_dir) if os.path.exists(digits_dir) else []
+        })
+    except Exception as e:
+        return jsonify({
             'error': str(e)
         })
 
