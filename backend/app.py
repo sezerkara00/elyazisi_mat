@@ -14,6 +14,7 @@ from tensorflow.keras.utils import to_categorical
 import cv2
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from werkzeug.serving import run_simple
 
 app = Flask(__name__)
 # CORS ayarlarını güncelle
@@ -341,6 +342,11 @@ def predict():
 if __name__ == '__main__':
     # Model başlangıçta yükle
     load_model_once()
-    # Port ayarını güncelle
-    port = int(os.environ.get("PORT", 10000))
-    app.run(host='0.0.0.0', port=port, debug=False) 
+    # Gunicorn ile çalıştığında bu kısım kullanılmayacak
+    if os.environ.get('RENDER'):
+        # Render.com'da Gunicorn kullanılacak
+        pass
+    else:
+        # Lokal geliştirme için
+        port = int(os.environ.get("PORT", 10000))
+        run_simple('0.0.0.0', port, app, use_reloader=True) 
