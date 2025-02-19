@@ -15,17 +15,22 @@ import cv2
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from werkzeug.serving import run_simple
+import logging
+
+# Logging ayarları
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 # CORS ayarlarını güncelle
 CORS(app, resources={
-    r"/predict": {
+    r"/*": {  # Tüm endpoint'ler için CORS
         "origins": [
-            "https://elyazisi-mat.vercel.app",  # Vercel'den aldığınız URL
+            "https://elyazisi-mat.vercel.app",
             "http://localhost:3000",
             "*"
         ],
-        "methods": ["POST"],
+        "methods": ["GET", "POST", "OPTIONS"],
         "allow_headers": ["Content-Type"]
     }
 })
@@ -295,6 +300,24 @@ def load_model_once():
             train_model(model, './digits')
     return model
 
+@app.route('/', methods=['GET'])
+def home():
+    logger.info("Root endpoint called")
+    return jsonify({
+        'status': 'online',
+        'message': 'Matematik El Yazısı Tanıma API',
+        'endpoints': {
+            'predict': '/predict (POST)'
+        }
+    })
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    logger.info("Health check endpoint called")
+    return jsonify({
+        'status': 'healthy'
+    })
+
 @app.route('/predict', methods=['POST'])
 @limiter.limit("1 per second")  # Her kullanıcı için saniyede 1 istek
 def predict():
@@ -341,13 +364,15 @@ def predict():
         })
 
 if __name__ == '__main__':
-    # Model başlangıçta yükle
+    logger.info("Application starting...")
     load_model_once()
-    # Gunicorn ile çalıştığında bu kısım kullanılmayacak
+    
     if os.environ.get('RENDER'):
         # Render.com'da Gunicorn kullanılacak
-        pass
+        logger.info("Running on Render.com")
+        app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 10000)))
     else:
         # Lokal geliştirme için
+        logger.info("Running locally")
         port = int(os.environ.get("PORT", 10000))
         run_simple('0.0.0.0', port, app, use_reloader=True) 
