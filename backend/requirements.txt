@@ -6,4 +6,5 @@ numpy==1.21.2
 tensorflow-cpu==2.7.0
 pillow==8.3.2
 opencv-python-headless==4.5.3.56
-werkzeug==2.0.1 
+werkzeug==2.0.1
+protobuf==3.20.0 
