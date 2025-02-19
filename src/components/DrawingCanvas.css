@@ -1,0 +1,85 @@
+.canvas-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+}
+
+canvas {
+  border: 2px solid #ccc;
+  background: white;
+  border-radius: 8px;
+  touch-action: none;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+button {
+  padding: 8px 16px;
+  font-size: 16px;
+  border: none;
+  background: #007bff;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #0056b3;
+}
+
+.drawing-hint {
+  color: #666;
+  font-size: 14px;
+}
+
+.canvas-container canvas {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.canvas-wrapper {
+  position: relative;
+  margin-bottom: 20px;
+}
+
+.segment-buttons {
+  position: absolute;
+  top: -20px;
+  left: 0;
+  right: 0;
+  height: 0;
+}
+
+.clear-segment-button {
+  position: absolute;
+  transform: translateX(-50%);
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 50%;
+  background: #ff4444;
+  color: white;
+  font-size: 20px;
+  line-height: 1;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+
+.clear-segment-button:hover {
+  opacity: 1;
+  background: #ff0000;
+}
+
+.clear-all-button {
+  margin-top: 10px;
+  background: #dc3545;
+}
+
+.clear-all-button:hover {
+  background: #c82333;
+} 
